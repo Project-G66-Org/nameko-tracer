@@ -1,0 +1,37 @@
+version: 2.1
+jobs:
+  release:
+
+    docker:
+      - image: circleci/python:3.10
+
+    steps:
+      - checkout
+
+      - run:
+          name: upload nameko tracer package
+          command: |
+            sudo pip install "check-manifest==0.42"
+            sudo pip install devpi-client
+            devpi use https://root:${DEVPI_ROOT_PASSWORD}@devpi.student.com
+            devpi login root --password=${DEVPI_ROOT_PASSWORD}
+            devpi use root/prod
+            devpi upload
+            devpi logoff
+
+workflows:
+  version: 2
+  do-it-all:
+    jobs:
+      - approval:
+          # filters:
+          #   branches:
+          #     only: master
+          context: org-global
+          type: approval
+          requires:
+            - test
+      - release:
+          context: org-global
+          requires:
+            - approval
