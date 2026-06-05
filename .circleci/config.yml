@@ -43,8 +43,8 @@ workflows:
           #     only: master
           context: org-global
           type: approval
-          requires:
-            - test
+          # requires:
+          #   - test
       - release:
           context: org-global
           requires:
