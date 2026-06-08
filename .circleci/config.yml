@@ -1,4 +1,17 @@
 version: 2.1
+orbs:
+  service-orb: g66/service@dev:DO-77
+
+commands:
+  install_aws_cli:
+    description: "Install AWS CLI"
+    steps:
+      - run:
+          name: install aws cli
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
 jobs:
   release:
 
@@ -7,17 +20,18 @@ jobs:
 
     steps:
       - checkout
+      - install_aws_cli
+      - service-orb/codeartifact_login:
+          tool: twine
 
       - run:
           name: upload nameko tracer package
           command: |
-            sudo pip install "check-manifest==0.42"
-            sudo pip install devpi-client
-            devpi use https://root:${DEVPI_ROOT_PASSWORD}@devpi.student.com
-            devpi login root --password=${DEVPI_ROOT_PASSWORD}
-            devpi use root/prod
-            devpi upload
-            devpi logoff
+            python -m venv venv
+            . venv/bin/activate
+            pip install twine build
+            python -m build
+            twine upload dist/* --repository codeartifact
 
 workflows:
   version: 2
@@ -29,8 +43,8 @@ workflows:
           #     only: master
           context: org-global
           type: approval
-          requires:
-            - test
+          # requires:
+          #   - test
       - release:
           context: org-global
           requires:
